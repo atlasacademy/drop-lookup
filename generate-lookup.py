@@ -109,18 +109,26 @@ for sheet_name in DROP_SHEET_NAMES:
                 for j in range(i, i + 5):
                     if j < len(df_cleaned):
                         sub_dict = {
-                            "No.": df_cleaned.iloc[j, index_base_add + 2],  # No.
-                            "Area": df_cleaned.iloc[j, index_base_add + 4],  # Area
-                            "Quest": df_cleaned.iloc[j, index_base_add + 5],  # Quest
-                            "AP": df_cleaned.iloc[j, index_base_add + 6],  # AP
-                            "BP/AP": df_cleaned.iloc[j, index_base_add + 7],  # BP/AP
-                            "AP/Drop": df_cleaned.iloc[
-                                j, index_base_add + 8
-                            ],  # AP/Drop
-                            "Drop Chance": df_cleaned.iloc[
-                                j, index_base_add + 10
-                            ],  # Drop Chance
-                            "Runs": df_cleaned.iloc[j, index_base_add + 12],  # Runs
+                            "No.": df_cleaned.iloc[j, index_base_add + 2],
+                            "Area": df_cleaned.iloc[j, index_base_add + 4],
+                            "Quest": df_cleaned.iloc[j, index_base_add + 5],
+                            "AP": df_cleaned.iloc[j, index_base_add + 6],
+                            "BP/AP": round(
+                                float(df_cleaned.iloc[j, index_base_add + 7]), 2
+                            )
+                            if df_cleaned.iloc[j, index_base_add + 7] is not None
+                            else None,
+                            "AP/Drop": round(
+                                float(df_cleaned.iloc[j, index_base_add + 8]), 2
+                            )
+                            if df_cleaned.iloc[j, index_base_add + 8] is not None
+                            else None,
+                            "Drop Chance": round(
+                                float(df_cleaned.iloc[j, index_base_add + 10]), 2
+                            )
+                            if df_cleaned.iloc[j, index_base_add + 10] is not None
+                            else None,
+                            "Runs": df_cleaned.iloc[j, index_base_add + 12],
                         }
 
                         if sub_dict["Area"]:  # Otherwise there is no data
