@@ -161,7 +161,7 @@ for sheet_name in DROP_SHEET_NAMES:
         sheet_list, key=lambda x: (rarity_order.get(x["rarity"], 0), x["id"])
     )
 
-    print("... Done.", flush=True)
+    print(f"... Found {len(sheet_list)} items in sheet {sheet_name}.", flush=True)
 
 
 mats_file_name = Path("./assets/mats.json").resolve()
