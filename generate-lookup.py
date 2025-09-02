@@ -79,7 +79,9 @@ for sheet_name in DROP_SHEET_NAMES:
     df_cleaned = df.iloc[1:]
     # df.columns[1] # The index in the admin info sheet
     df_cleaned.columns = df_cleaned.iloc[0]
-    df_cleaned = df_cleaned[df_cleaned.iloc[:, 0] != "Item"]
+    df_cleaned = df_cleaned[
+        (df_cleaned.iloc[:, 0] != "Item") & (df_cleaned.iloc[:, 8] != "Base")
+    ]
     df_cleaned = df_cleaned[df_cleaned.iloc[:, 8] != "1P+1L+1T"].dropna(
         axis=1, how="all"
     )
@@ -165,8 +167,8 @@ for sheet_name in DROP_SHEET_NAMES:
 mats_file_name = Path("./assets/mats.json").resolve()
 mats_file_name.parent.mkdir(parents=True, exist_ok=True)
 
-with open(mats_file_name, "w") as f:
-    json.dump(result_dict, f, cls=NpEncoder)
+with open(mats_file_name, "w", encoding="utf-8") as f:
+    json.dump(result_dict, f, cls=NpEncoder, ensure_ascii=False)
 
 
 print(f"Wrote drop data to `{mats_file_name}`", flush=True)
