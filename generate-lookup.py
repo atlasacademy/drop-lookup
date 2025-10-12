@@ -1,4 +1,5 @@
 import json
+import time
 from io import BytesIO
 from pathlib import Path
 
@@ -18,6 +19,34 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
+def retry_request(func, max_retries=3, backoff_factor=2):
+    """
+    Retry a function with exponential backoff.
+
+    Args:
+        func: Function to retry
+        max_retries: Maximum number of retry attempts
+        backoff_factor: Multiplier for exponential backoff delay
+
+    Returns:
+        Result of the function call
+
+    Raises:
+        Last exception encountered if all retries fail
+    """
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            wait_time = backoff_factor ** attempt
+            print(f"\nRetry {attempt + 1}/{max_retries} after error: {e}", flush=True)
+            print(f"Waiting {wait_time}s before retry...", end=" ", flush=True)
+            time.sleep(wait_time)
+    raise Exception("Max retries reached")
+
+
 ITEM_SHEET_URL = "https://docs.google.com/spreadsheets/d/104CdfaEnvhYavh6reVtpB599rCa5uzDiaO0Jtrg5qR0/export?gid=135314365&format=csv"
 DROP_SHEET_BASE_URL = "https://docs.google.com/spreadsheets/d/1_SlTjrVRTgHgfS7sRqx4CeJMqlz687HdSlYqiW-JvQA/export?format=xlsx"
 DROP_SHEET_NAMES = [
@@ -29,15 +58,19 @@ DROP_SHEET_NAMES = [
 
 print("Fetching items", end="", flush=True)
 
-item_df = pd.read_csv(ITEM_SHEET_URL)
+item_df = retry_request(lambda: pd.read_csv(ITEM_SHEET_URL))
 item_df = item_df[item_df["Image link"].str.contains("Items/") == 1]
 item_dict = item_df.set_index("ID")[["NA Name", "Image link"]].T.to_dict()
 
 
 print("... Fetched.\nFetching item icons...", end=" ", flush=True)
 
-nice_items_r = requests.get("https://api.atlasacademy.io/export/JP/nice_item.json")
-nice_items_r.raise_for_status()
+def fetch_nice_items():
+    response = requests.get("https://api.atlasacademy.io/export/JP/nice_item.json")
+    response.raise_for_status()
+    return response
+
+nice_items_r = retry_request(fetch_nice_items)
 nice_items = {item["id"]: item for item in nice_items_r.json()}
 for item_info in item_dict.values():
     item_info["rarity"] = nice_items[
@@ -47,8 +80,12 @@ for item_info in item_dict.values():
 
 print("Fetched.\nFetching dropsheet", end="", flush=True)
 
-response = requests.get(DROP_SHEET_BASE_URL)
-response.raise_for_status()
+def fetch_dropsheet():
+    response = requests.get(DROP_SHEET_BASE_URL)
+    response.raise_for_status()
+    return response
+
+response = retry_request(fetch_dropsheet)
 
 excel_data = BytesIO(response.content)
 
