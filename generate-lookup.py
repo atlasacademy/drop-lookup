@@ -55,12 +55,35 @@ DROP_SHEET_NAMES = [
     "Best 5 APDrop (NA)",
     "Best 5 Droprate (NA)",
 ]
+ITEM_ID_COLUMN_CANDIDATES = ("ID", "q")
+REQUIRED_ITEM_COLUMNS = ("NA Name", "Image link")
 
 print("Fetching items", end="", flush=True)
 
 item_df = retry_request(lambda: pd.read_csv(ITEM_SHEET_URL))
-item_df = item_df[item_df["Image link"].str.contains("Items/") == 1]
-item_dict = item_df.set_index("ID")[["NA Name", "Image link"]].T.to_dict()
+
+item_id_column = next(
+    (column for column in ITEM_ID_COLUMN_CANDIDATES if column in item_df.columns), None
+)
+if item_id_column is None:
+    raise KeyError(
+        f"None of {ITEM_ID_COLUMN_CANDIDATES} are in the columns. "
+        f"Found columns: {list(item_df.columns)}"
+    )
+
+missing_item_columns = [
+    column for column in REQUIRED_ITEM_COLUMNS if column not in item_df.columns
+]
+if missing_item_columns:
+    raise KeyError(
+        f"Missing required item columns: {missing_item_columns}. "
+        f"Found columns: {list(item_df.columns)}"
+    )
+
+item_df = item_df[item_df["Image link"].str.contains("Items/", na=False)].copy()
+item_df = item_df.dropna(subset=[item_id_column])
+item_df[item_id_column] = item_df[item_id_column].astype(str).str.strip()
+item_dict = item_df.set_index(item_id_column)[["NA Name", "Image link"]].T.to_dict()
 
 
 print("... Fetched.\nFetching item icons...", end=" ", flush=True)
