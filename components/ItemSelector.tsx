@@ -2,28 +2,28 @@ import { ItemDataType, sheetNames } from "@/pages";
 import styles from "@/styles/ItemSelector.module.css";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import ItemTable from "./ItemTable";
 
 const ItemSelector = ({ itemData }: { itemData: ItemDataType }) => {
-    const [selectedItem, setSelectedItem] = useState({} as ItemDataType[(typeof sheetNames)[number]][number]);
-    const [selectedSheet, setSelectedSheet] = useState(sheetNames[0]);
+    const [selectedItemName, setSelectedItemName] = useState("");
+    const [selectedSheet, setSelectedSheet] = useState<(typeof sheetNames)[number]>(sheetNames[0]);
     const [isExpanded, setIsExpanded] = useState(false);
 
-    useEffect(() => {
-        /* If the sheet changes while an item is selected, this updates the item */
-
-        if (!selectedItem.name) {
-            return;
-        }
-
-        setSelectedItem(itemData[selectedSheet].find((item) => item.name === selectedItem.name) ?? ({} as typeof selectedItem));
-    }, [itemData, selectedItem.name, selectedSheet]);
+    const selectedItem = selectedItemName ? itemData[selectedSheet].find((item) => item.name === selectedItemName) : undefined;
 
     const reset = () => {
         setIsExpanded(false);
-        setSelectedItem({} as typeof selectedItem);
+        setSelectedItemName("");
+    };
+
+    const setSheet = (sheet: typeof selectedSheet) => {
+        setSelectedSheet(sheet);
+
+        if (selectedItemName && !itemData[sheet].some((item) => item.name === selectedItemName)) {
+            setSelectedItemName("");
+        }
     };
 
     return (
@@ -33,14 +33,14 @@ const ItemSelector = ({ itemData }: { itemData: ItemDataType }) => {
                 <select
                     className={styles.sheetDropdown}
                     aria-label="Select drop category"
-                    defaultValue={sheetNames[0]}
-                    onChange={(e) => setSelectedSheet(e.target.value as typeof selectedSheet)}
+                    value={selectedSheet}
+                    onChange={(e) => setSheet(e.target.value as typeof selectedSheet)}
                 >
                     {sheetNames.map((sheetName) => (
                         <option key={sheetName}>{sheetName}</option>
                     ))}
                 </select>
-                {selectedItem.name ? (
+                {selectedItem ? (
                     <div className={styles.selectedImageContainer}>
                         <span>
                             Selected:{" "}
@@ -66,25 +66,25 @@ const ItemSelector = ({ itemData }: { itemData: ItemDataType }) => {
                 ) : (
                     <p style={{ marginTop: "2rem" }}>Select a mat from below.</p>
                 )}
-                {!selectedItem.name || (selectedItem.name && isExpanded) ? (
+                {!selectedItem || isExpanded ? (
                     <div className={styles.itemImageContainer}>
                         {itemData[selectedSheet].map((item) => (
                             <Image
                                 key={item.name}
-                                className={styles.itemImage + (item.name === selectedItem.name ? ` ${styles.selectedItem}` : "")}
+                                className={styles.itemImage + (item.name === selectedItem?.name ? ` ${styles.selectedItem}` : "")}
                                 height="60"
                                 width="60"
                                 src={item.image}
                                 alt={item.name}
-                                onClick={() => setSelectedItem(item)}
+                                onClick={() => setSelectedItemName(item.name)}
                             />
                         ))}
                     </div>
                 ) : (
-                    []
+                    null
                 )}
             </div>
-            {selectedItem.name ? <ItemTable selectedItem={selectedItem}></ItemTable> : []}
+            {selectedItem ? <ItemTable selectedItem={selectedItem}></ItemTable> : null}
             <button onClick={reset} className={styles.resetButton}>
                 Reset
             </button>
